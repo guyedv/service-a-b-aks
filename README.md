@@ -17,8 +17,8 @@ Setup and Deployment:
 
 Step 1: Clone the Repository
 Clone this repository to your local machine:
-git clone https://github.com/your-username/aks-service-a-b-guyedv.git
-cd aks-service-a-b-guyedv
+git clone https://github.com/guyedv/service-a-b-aks.git
+cd service-a-b-aks
 
 Step 2: Initialize And Apply Terraform
 
