@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: bitcoin-fetcher
-        image: pandaforeveracr.azurecr.io/service-a:14.02
+        image: scoobydoobacr.azurecr.io/service-a:v12.45
         ports:
         - containerPort: 8000
         resources:

@@ -1,6 +1,11 @@
+variable "subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+}
+
 provider "azurerm" {
   features {}
-  subscription_id = "9a4c7ee1-19d3-46dc-9950-ce35e8a196a2"
+  subscription_id = var.subscription_id
 }
 provider "template" {
   # Add any provider configuration options if necessary.
@@ -50,12 +55,43 @@ resource "azurerm_kubernetes_cluster" "main" {
     type = "SystemAssigned"
   }
 
-  role_based_access_control_enabled = true 
+  role_based_access_control_enabled = true
+  
+    # Enable Container Insights (Azure Monitor)
+  monitor_metrics {}
    
-
   network_profile {
     network_plugin = "azure"
     load_balancer_sku = "standard"
+  }
+    # Enable Container Insights
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+  }
+}
+
+# Create Log Analytics Workspace for Container Insights
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = "${var.prefix}-law"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+}
+
+# Create Azure Monitor Managed Prometheus
+resource "azurerm_monitor_workspace" "main" {
+  name                = "${var.prefix}-prometheus"
+  resource_group_name = azurerm_resource_group.main.name
+  location    = azurerm_resource_group.main.location
+}
+
+resource "azurerm_dashboard_grafana" "main" {
+  name                = "${var.prefix}-grafana"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  grafana_major_version = 10
+  sku      = "Standard"
+  identity {
+    type = "SystemAssigned"
   }
 }
 
@@ -134,6 +170,13 @@ resource "null_resource" "apply_nginx_ingress" {
     command = "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml"
   }
   depends_on = [null_resource.apply_ingress_yaml]
+}
+
+resource "null_resource" "apply_network_poliicy" {
+  provisioner "local-exec" {
+    command = "kubectl apply -f ./network-policy.yaml"
+  }
+  depends_on = [null_resource.apply_nginx_ingress]
 }
 
 
